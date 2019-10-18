@@ -21,3 +21,9 @@ cd my-awesome-app
 npm i
 npm start
 ```
+
+### Starting Point
+
+1. `src/server` is starting point for app.
+2. `src` behaves as root folder as configured in `babelrc` with `module-resolver`
+3. Files & Folder inside should begin with `@` to distinguish them from `node_modules`
