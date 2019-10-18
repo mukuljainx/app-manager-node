@@ -13,12 +13,18 @@
     "build:js": "babel ./src --out-dir './lib' --extensions '.ts' --source-maps inline"
   },
   "lint-staged": {
-    "{src,test}/**/*.ts*": [
+    "{src}/**/*.ts*": [
       "prettier --write",
       "git add"
     ]
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged"
+    }
+  },
   "dependencies": {
+    "@types/debug": "^4.1.5",
     "body-parser": "1.19.0",
     "cookie-parser": "1.4.4",
     "debug": "4.1.1",
@@ -28,6 +34,8 @@
     "serve-favicon": "2.5.0"
   },
   "devDependencies": {
+    "lint-staged": "9.4.2",
+    "husky": "3.0.9",
     "typescript": "3.6.4",
     "@babel/preset-env": "7.6.3",
     "@types/cookie-parser": "1.4.2",
