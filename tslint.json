@@ -1,3 +1,12 @@
 {
-  "extends": ["tslint:latest", "tslint-config-prettier"]
+  "extends": ["tslint:latest", "tslint-config-prettier"],
+  "rules": {
+    "no-console": false,
+    "object-literal-sort-keys": false,
+    "no-submodule-imports": false,
+    "member-ordering": false,
+    "ordered-imports": false,
+    "no-implicit-dependencies": false,
+    "no-namespace": false
+  }
 }
