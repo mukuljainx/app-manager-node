@@ -1,0 +1,28 @@
+<html>
+  <head>
+    <title>Unzip</title>
+  </head>
+  <script>
+    function onSubmit(e) {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      fetch('http://localhost:8000/manager/zip', {
+        method: 'POST',
+        body: formData,
+      })
+        .then(response => response.json())
+        .then(result => {
+          console.log('Success:', result);
+        })
+        .catch(error => {
+          console.error('Error:', error);
+        });
+    }
+  </script>
+  <body>
+    <form onsubmit="onSubmit(event)">
+      <input accept=".zip" name="app" type="file" required />
+      <input type="submit" value="Submit" />
+    </form>
+  </body>
+</html>
