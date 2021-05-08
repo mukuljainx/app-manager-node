@@ -8,7 +8,7 @@ import bodyParser from 'body-parser';
 dotenv.config();
 
 // Service
-import { init } from '@routes';
+import { init } from 'routes';
 
 const app = express();
 
