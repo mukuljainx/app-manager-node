@@ -18,6 +18,8 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'))); // For serving static files
 
+global.appRoot = path.resolve(__dirname);
+
 // Routes
 init(app);
 
