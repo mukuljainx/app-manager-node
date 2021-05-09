@@ -3,3 +3,8 @@ declare module NodeJS {
     appRoot: string;
   }
 }
+
+declare module 'node-cmd' {
+  function run(command: string): NodeJS.Process;
+  function runSync(command: string): { err: any; data: any; stderr: any };
+}
