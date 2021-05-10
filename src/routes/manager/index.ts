@@ -2,10 +2,12 @@ import express from 'express';
 import multer from 'multer';
 import extract from 'extract-zip';
 import path from 'path';
+import { startBuild } from 'controller/appManager';
 
 const router = express.Router();
 
 router.get('/zip', (req, res) => {
+  startBuild('calendar', (x: string) => {});
   res.send('200');
 });
 
@@ -20,7 +22,7 @@ router.post('/zip', upload.single('app'), (req, res) => {
   extract(filepath, {
     dir: path.resolve(global.appRoot + '/../temp/uploads/extracted'),
   })
-    .then(d => {
+    .then((d) => {
       console.log(d);
       res.send(200);
     })

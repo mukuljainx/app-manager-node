@@ -18,5 +18,8 @@
     "@babel/preset-react": "^7.12.13",
     "@babel/preset-typescript": "^7.13.0",
     "babel-loader": "^8.2.2"
+  },
+  "scripts": {
+    "build:os-package": " webpack --progress --config webpack.prod.js --mode=production"
   }
 }

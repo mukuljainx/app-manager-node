@@ -7,7 +7,7 @@
   "scripts": {
     "start:build": "node ./lib/server",
     "start": "npx tsc-watch --onSuccess 'npm run serve'",
-    "serve": "npx nodemon --exec babel-node --extensions '.ts' --inspect ./src/server.ts",
+    "serve": "babel-node --extensions '.ts' --inspect ./src/server.ts",
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc --emitDeclarationOnly",
     "build:js": "babel ./src --out-dir './lib' --extensions '.ts' --source-maps inline"
@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@types/debug": "^4.1.5",
+    "await-handler": "^1.1.2",
     "body-parser": "1.19.0",
     "cookie-parser": "1.4.5",
     "debug": "4.3.1",
