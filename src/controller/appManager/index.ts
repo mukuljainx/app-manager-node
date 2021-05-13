@@ -1,113 +1,47 @@
-import { copyFiles } from 'helper/file';
-const { spawn } = require('child_process');
-import cmd from 'node-cmd';
+import { RequestHandler } from 'express';
+import extract from 'extract-zip';
 import path from 'path';
 import fs from 'fs';
-import awaitHandler from 'await-handler';
 
-const runner: Record<string, any> = {};
+import { runner, startBuild } from './appBuilder';
 
-export const startBuild = async (
-  tempAppName: string,
-  callback: (id: string) => void,
-) => {
-  const id = `${tempAppName}-${new Date().getTime()}`;
-  callback(id);
-  try {
-    runner[id] = {
-      state: 'RUNNING',
-      activity: 'Copying files...',
-    };
-    const filesToCopy = [
-      'webpack.prod.js',
-      'webpack.common.js',
-      '.babelrc',
-      'tsconfig.json',
-    ];
-    const dest = path.resolve(
-      `${global.appRoot}/../temp/uploads/extracted/${tempAppName}/`,
-    );
-    const source = `${path.resolve(__dirname)}/assests/`;
+export const getStatus: RequestHandler = (req, res) => {
+  const id = req.params.id;
+  res.json(runner[id]);
+};
 
-    const [err, result] = await awaitHandler(
-      copyFiles(source, dest, filesToCopy),
-    );
-    if (err) {
-      runner[id] = {
-        state: 'FAILED',
-        activity: 'Failed to copy files',
-        error: JSON.stringify(err),
-      };
-      return;
-    }
+export const buildApp: RequestHandler = (req, res) => {
+  const filepath = path.join(req.file.destination, req.file.filename);
 
-    const extraPackages = require('./assests/package.json');
-
-    const packageJSON = require(`${dest}/package.json`);
-    packageJSON.devDependencies = {
-      ...packageJSON.devDependencies,
-      ...extraPackages.babel,
-      ...extraPackages.webpack,
-    };
-
-    packageJSON.scripts = {
-      ...packageJSON.scripts,
-      ...extraPackages.scripts,
-    };
-
-    delete packageJSON.dependencies['react-scripts'];
-
-    fs.writeFileSync(
-      `${dest}/package.json`,
-      JSON.stringify(packageJSON),
-      'utf8',
-    );
-
-    runner[id] = {
-      state: 'RUNNING',
-      activity: 'Package JSON updated',
-    };
-
-    console.log(runner[id]);
-
-    const command = spawn(
-      `cd ${dest} && npm i && touch src/${id}.ts && npm run build:os-package`,
-      {
-        shell: true,
-      },
-    );
-
-    command.stdout.on('data', (data: string) => {
-      console.log(`stdout: ${data}`);
-      runner[id] = {
-        state: 'RUNNING',
-        activity: 'Installing/building packages',
-        data: data,
-      };
-    });
-
-    command.on('error', (error: any) => {
-      console.log(`error: ${error.message}`);
-      runner[id] = {
-        state: 'RUNNING',
-        activity: 'Installing/building packages error',
-        error,
-      };
-    });
-
-    command.on('close', (code: string) => {
-      console.log(`child process exited with code ${code}`);
-      runner[id] = {
-        state: 'DONE',
-        activity: 'Completed with code',
-        error: code,
-      };
-    });
-  } catch (unexpectedError) {
-    runner[id] = {
-      state: 'FAILED',
-      activity: 'Unexpected Error',
-      error: unexpectedError,
-    };
+  if (req.file.mimetype !== 'application/zip') {
+    res.sendStatus(400);
+    return;
   }
+
+  const tempUploadDir = path.resolve(`${global.appRoot}/../temp/uploads`);
+  const name = `${req.file.originalname.replace(
+    '.zip',
+    '',
+  )}-${new Date().getTime()}`;
+
+  extract(filepath, {
+    dir: `${tempUploadDir}/extracted/${name}`,
+  })
+    .then((d) => {
+      startBuild(name, (id: string) => {
+        res.json({ url: `/manager/build/status/${id}`, id });
+      });
+      fs.unlink(`${tempUploadDir}/${req.file.filename}`, () => {
+        console.log('error during deleting the uploaded zip');
+      });
+    })
+    .catch((error) => {
+      res.sendStatus(500).json(error);
+    });
+};
+
+export const getFile: RequestHandler = async (req, res) => {
+  const { appName, fileName } = req.params;
+  const file = path.resolve(`${global.appRoot}/apps/${appName}/${fileName}`);
+  res.sendFile(file);
 };

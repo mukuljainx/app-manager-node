@@ -6,15 +6,16 @@
     function onSubmit(e) {
       e.preventDefault();
       const formData = new FormData(e.target);
-      fetch('http://localhost:8000/manager/zip', {
+      fetch('http://localhost:8000/manager/build/react', {
         method: 'POST',
         body: formData,
       })
-        .then(response => response.json())
-        .then(result => {
+        .then((response) => response.json())
+        .then((result) => {
           console.log('Success:', result);
+          window.location = 'http://localhost:8000' + result.url;
         })
-        .catch(error => {
+        .catch((error) => {
           console.error('Error:', error);
         });
     }

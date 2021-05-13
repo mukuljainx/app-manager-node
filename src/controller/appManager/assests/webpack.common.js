@@ -1,4 +1,5 @@
 const path = require("path");
+const WebpackMessages = require("webpack-messages");
 const ForkTsCheckerWebpackPlugin = require("fork-ts-checker-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
 
@@ -9,7 +10,14 @@ const config = {
     modules: ["node_modules", "."],
     alias: {}
   },
-  plugins: [new ForkTsCheckerWebpackPlugin(), new CleanWebpackPlugin()],
+  plugins: [
+    new WebpackMessages({
+      name: "client",
+      logger: (str) => console.log(`>> ${str}`)
+    }),
+    new ForkTsCheckerWebpackPlugin(),
+    new CleanWebpackPlugin()
+  ],
   module: {
     rules: [
       {
@@ -26,7 +34,8 @@ const config = {
             options: {
               limit: 65000,
               mimetype: "image/svg+xml",
-              name: "[name].[ext]"
+              name: "[name].[ext]",
+              esModule: false
             }
           }
         ]
@@ -35,7 +44,8 @@ const config = {
         test: /\.(png|jpg|gif)($|\?)/,
         loader: "url-loader",
         options: {
-          limit: 8192
+          limit: 8192,
+          esModule: false
         }
       },
       {
