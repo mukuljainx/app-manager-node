@@ -5,6 +5,8 @@ import logger from 'morgan';
 import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 
+import db from 'db';
+
 dotenv.config();
 
 // Service
@@ -42,5 +44,9 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res) => {
 
 // global error handler
 app.use(globalErrorHandler);
+
+process.on('exit', (code) => {
+  db.$disconnect();
+});
 
 export default app;
