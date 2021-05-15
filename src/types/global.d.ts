@@ -4,6 +4,10 @@ declare module NodeJS {
   }
 }
 
+declare namespace Express {
+  interface User extends IUser {}
+}
+
 declare module 'node-cmd' {
   function run(command: string): NodeJS.Process;
   function runSync(command: string): { err: any; data: any; stderr: any };

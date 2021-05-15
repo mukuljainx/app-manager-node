@@ -1,3 +1,4 @@
+import { verifyUser } from 'auth';
 import { Express } from 'express';
 
 import appRotues from './app';
@@ -8,7 +9,7 @@ import managerRotues from './manager';
  */
 const init = (app: Express) => {
   app.use('/app', appRotues);
-  app.use('/manager', managerRotues);
+  app.use('/manager', verifyUser, managerRotues);
 };
 
 export { init };

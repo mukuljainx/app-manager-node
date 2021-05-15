@@ -23,10 +23,18 @@ model App {
   userId    Int
 }
 
+enum Role {
+  USER
+  ADMIN
+}
+
 model User {
-  id    Int    @id @default(autoincrement())
-  email String @unique
-  type  String
-  name  String
-  App   App[]
+  id     Int     @id @default(autoincrement())
+  email  String  @unique
+  active Boolean
+  type   Role
+  avatar String?
+  name   String
+  App    App[]
+
 }

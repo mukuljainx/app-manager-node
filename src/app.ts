@@ -6,6 +6,7 @@ import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 
 import db from 'db';
+import initAuth from 'auth';
 
 dotenv.config();
 
@@ -24,6 +25,9 @@ global.appRoot = path.resolve(__dirname);
 
 // Routes
 init(app);
+
+// Auth
+initAuth(app);
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
