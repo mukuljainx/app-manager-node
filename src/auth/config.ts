@@ -1,7 +1,3 @@
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 const googleStategyConfig = {
   clientID: process.env.GOOGLE_WEB_CLIENT_ID!,
   clientSecret: process.env.GOOGLE_WEB_CLIENT_SECRET!,

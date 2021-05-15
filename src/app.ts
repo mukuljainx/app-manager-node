@@ -6,8 +6,11 @@ import cookieParser from 'cookie-parser';
 import bodyParser from 'body-parser';
 import cors from 'cors';
 
+global.appRoot = path.resolve(__dirname);
+
 import db from 'db';
 import initAuth from 'auth';
+import 'bucket';
 
 dotenv.config();
 
@@ -22,8 +25,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'))); // For serving static files
-
-global.appRoot = path.resolve(__dirname);
 
 // Routes
 init(app);

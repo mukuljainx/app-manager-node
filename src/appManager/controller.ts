@@ -45,3 +45,7 @@ export const getFile: RequestHandler = async (req, res) => {
   const file = path.resolve(`${global.appRoot}/apps/${appName}/${fileName}`);
   res.sendFile(file);
 };
+
+export const getApps: RequestHandler = async (req, res) => {
+  res.send(200);
+};
