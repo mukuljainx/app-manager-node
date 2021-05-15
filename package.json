@@ -25,6 +25,7 @@
   },
   "dependencies": {
     "@prisma/client": "^2.22.1",
+    "@types/cors": "^2.8.10",
     "@types/debug": "^4.1.5",
     "@types/ncp": "^2.0.4",
     "@types/passport": "^1.0.6",
@@ -34,6 +35,7 @@
     "await-handler": "^1.1.2",
     "body-parser": "1.19.0",
     "cookie-parser": "1.4.5",
+    "cors": "^2.8.5",
     "debug": "4.3.1",
     "dotenv": "9.0.0",
     "ejs": "^3.1.6",
