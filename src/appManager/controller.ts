@@ -5,6 +5,15 @@ import fs from 'fs';
 
 import { runner, startBuild } from './appBuilder';
 import * as db from 'db';
+import { getItem } from 'bucket';
+
+const getCSSDimension = (x: string | number) => {
+  if (isNaN(x as number)) {
+    return x;
+  } else {
+    return parseInt(x as string, 10);
+  }
+};
 
 export const getStatus: RequestHandler = (req, res) => {
   const id = req.params.id;
@@ -55,10 +64,10 @@ export const buildApp: RequestHandler = (req, res) => {
     });
 };
 
-export const getFile: RequestHandler = async (req, res) => {
+export const getFile: RequestHandler = (req, res, next) => {
   const { appName, fileName } = req.params;
-  const file = path.resolve(`${global.appRoot}/apps/${appName}/${fileName}`);
-  res.sendFile(file);
+  console.log(`${appName}/${fileName}`);
+  getItem(`${appName}/${fileName}`, res);
 };
 
 export const getApps: RequestHandler = async (req, res, next) => {
@@ -80,7 +89,17 @@ export const getApps: RequestHandler = async (req, res, next) => {
       userMap[u._id] = u;
     });
 
-    res.json(apps.map((a) => ({ ...a, user: userMap[a.userId] })));
+    res.json(
+      apps.map((a) => ({
+        ...a,
+        user: userMap[a.userId],
+        options: {
+          ...a.options,
+          width: getCSSDimension(a.options.width),
+          height: getCSSDimension(a.options.height),
+        },
+      })),
+    );
   } catch (error) {
     res.status(500).json({
       error,
