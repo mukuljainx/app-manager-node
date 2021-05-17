@@ -12,7 +12,7 @@ const createRoutes = (app: Express) => {
   // this is for web app, as google redirects to web app
   // so it can send the data to our server
   // and get back the token as result
-  app.use('/auth/google/redirect', jwt.routes);
+  app.use('/api/auth/google/redirect', jwt.routes);
 };
 
 export const init = (app: Express) => {

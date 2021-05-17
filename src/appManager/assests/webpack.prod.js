@@ -10,7 +10,7 @@ const config = {
   mode: 'production',
   entry: ['./src/index'],
   output: {
-    publicPath: '/manager/apps/appName/',
+    publicPath: 'api/manager/assests/appName/',
     path: path.resolve('build'),
   },
 

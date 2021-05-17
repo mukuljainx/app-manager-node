@@ -1,29 +1,47 @@
-import { copyFiles } from 'helper/file';
+import { copyFiles, recursiveCopy } from 'helper/file';
 import path from 'path';
 import fs from 'fs';
 import awaitHandler from 'await-handler';
 import runCommand from 'helper/command';
-import { ncp } from 'ncp';
+import * as db from 'db';
+import { putFilesToBucket } from 'bucket/helper';
 
 export const runner: Record<string, any> = {};
+
+const updateStatus = (id: string, body: any) => {
+  if (runner[id]) {
+    runner[id] = { ...runner[id], ...body };
+  }
+};
 
 const deleteFolder = (dirPath: string) => {
   fs.rmdirSync(dirPath, { recursive: true });
 };
 
+interface IProps {
+  appId: string;
+  height: string;
+  icon: string;
+  name: string;
+  width: string;
+  user: Express.User;
+}
+
 export const startBuild = async (
-  tempAppName: string,
+  { appId, icon, height, name, width, user }: IProps,
   callback: (id: string) => void,
 ) => {
-  const id = tempAppName;
-  const dest = path.resolve(
-    `${global.appRoot}/../temp/uploads/extracted/${tempAppName}/`,
+  const id = appId;
+  const extracted = path.resolve(
+    `${global.appRoot}/../temp/uploads/extracted/${appId}/`,
   );
+  const buildPath = path.resolve(`${extracted}/build`);
   callback(id);
   try {
     runner[id] = {
       status: 'RUNNING',
-      activity: 'Copying files...',
+      activity: 'Preparing for build...',
+      stage: 1,
     };
     const filesToCopy = [
       'webpack.prod.js',
@@ -37,21 +55,21 @@ export const startBuild = async (
     const appFolder = path.resolve(`${global.appRoot}/apps/${id}`);
 
     const [err, result] = await awaitHandler(
-      copyFiles(source, dest, filesToCopy),
+      copyFiles(source, extracted, filesToCopy),
     );
     if (err) {
-      runner[id] = {
+      updateStatus(id, {
         status: 'FAILED',
-        activity: 'Failed to copy files',
-        error: JSON.stringify(err),
-      };
-      deleteFolder(dest);
+        activity: 'Failed while trying to copy required files.',
+        error: err,
+      });
+      deleteFolder(extracted);
       return;
     }
 
     const extraPackages = require('./assests/package.json');
 
-    const packageJSON = require(`${dest}/package.json`);
+    const packageJSON = require(`${extracted}/package.json`);
     packageJSON.devDependencies = {
       ...packageJSON.devDependencies,
       ...extraPackages.babel,
@@ -69,18 +87,15 @@ export const startBuild = async (
     delete packageJSON.dependencies['react-scripts'];
 
     fs.writeFileSync(
-      `${dest}/package.json`,
+      `${extracted}/package.json`,
       JSON.stringify(packageJSON),
       'utf8',
     );
 
-    runner[id] = {
-      status: 'RUNNING',
-      activity: 'Package JSON updated',
-    };
+    updateStatus(id, { activity: 'Updaing required files...', stage: 2 });
 
     // const mainFile = require();
-    let mainFile = fs.readFileSync(`${dest}/src/index.js`, {
+    let mainFile = fs.readFileSync(`${extracted}/src/index.js`, {
       encoding: 'utf8',
     });
 
@@ -89,43 +104,32 @@ export const startBuild = async (
       id,
     );
 
-    fs.writeFileSync(`${dest}/src/index.js`, mainFile, 'utf8');
+    fs.writeFileSync(`${extracted}/src/index.js`, mainFile, 'utf8');
 
-    runner[id] = {
-      status: 'RUNNING',
-      activity: 'index.js updated',
-    };
-
-    // const command = spawn(
-    //   ,
-    //   {
-    //     shell: true,
-    //   },
-    // );
+    updateStatus(id, {
+      stage: 3,
+      activity: 'Installing required dependencies...',
+    });
 
     const [error3] = await awaitHandler(
       runCommand(
-        `cd ${dest} && npm i && touch src/${id}.ts && node build ${id}`,
+        `cd ${extracted} && npm i && touch src/${id}.ts && node build ${id}`,
         {
           onData: (data) => {
-            runner[id] = {
-              status: 'RUNNING',
-              activity: 'Installing/building packages',
-              data: data,
-            };
+            updateStatus(id, { stage: 4, data, activity: 'Building app...' });
           },
           onError: (error) => {
-            runner[id] = {
-              status: 'RUNNING',
-              activity: 'Installing/building packages error',
+            updateStatus(id, {
+              status: 'FAILED',
+              activity: 'Unable to install required dependencies.',
               error,
-            };
+            });
           },
           onClose: () => {
-            runner[id] = {
-              status: 'RUNNING',
-              activity: 'Build completed succesfully',
-            };
+            updateStatus(id, {
+              stage: 4,
+              activity: 'Build completed succesfully...',
+            });
           },
         },
       ),
@@ -136,28 +140,64 @@ export const startBuild = async (
       return;
     }
 
-    ncp(`${dest}/build`, appFolder, { stopOnErr: true }, (error) => {
-      if (error) {
-        runner[id] = {
-          status: 'FAILED',
-          activity: 'Failed while copying files to app folder',
-          error,
-        };
-        deleteFolder(dest);
-      }
-
-      runner[id] = {
-        status: 'DONE',
-        activity: 'Files copied to app folder.',
-      };
-      deleteFolder(dest);
+    updateStatus(id, {
+      stage: 5,
+      activity: 'Pushing build files to Bucket...',
     });
+
+    // send to buckets
+    console.log(buildPath);
+    const [bucketError] = await awaitHandler(putFilesToBucket(id, buildPath));
+
+    if (bucketError) {
+      runner[id] = {
+        status: 'FAILED',
+        activity: 'Failed while uploading files to Bucket.',
+        error: bucketError,
+      };
+      deleteFolder(extracted);
+      return;
+    }
+
+    updateStatus(id, {
+      stage: 6,
+      activity: 'Updaing database with file entries...',
+    });
+
+    // send to db
+    const newApp = new db.App({
+      appId,
+      icon,
+      name,
+      options: { height, width },
+      userId: user?.id,
+      type: user?.type === 'ADMIN' ? 'GLOBAL' : 'LOCAL',
+    });
+
+    const [dbError, appDetails] = await awaitHandler(db.App.create(newApp));
+
+    if (dbError) {
+      updateStatus(id, {
+        status: 'FAILED',
+        activity: 'Failed while updating the db.',
+        error: dbError,
+      });
+      deleteFolder(extracted);
+
+      return;
+    }
+
+    updateStatus(id, {
+      stage: 7,
+      activity: 'App published successfully.',
+    });
+    deleteFolder(extracted);
   } catch (unexpectedError) {
     runner[id] = {
       status: 'FAILED',
       activity: 'Unexpected Error',
       error: unexpectedError,
     };
-    deleteFolder(dest);
+    deleteFolder(extracted);
   }
 };

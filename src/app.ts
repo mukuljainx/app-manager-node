@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+dotenv.config();
 import express, { ErrorRequestHandler } from 'express';
 import path from 'path';
 import logger from 'morgan';
@@ -8,11 +9,8 @@ import cors from 'cors';
 
 global.appRoot = path.resolve(__dirname);
 
-import db from 'db';
 import initAuth from 'auth';
 import 'bucket';
-
-dotenv.config();
 
 // Service
 import { init } from 'routes';
@@ -52,8 +50,8 @@ const globalErrorHandler: ErrorRequestHandler = (err, req, res) => {
 // global error handler
 app.use(globalErrorHandler);
 
-process.on('exit', (code) => {
-  db.$disconnect();
-});
+// process.on('exit', (code) => {
+//   db.$disconnect();
+// });
 
 export default app;

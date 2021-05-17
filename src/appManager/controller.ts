@@ -4,9 +4,13 @@ import path from 'path';
 import fs from 'fs';
 
 import { runner, startBuild } from './appBuilder';
+import * as db from 'db';
 
 export const getStatus: RequestHandler = (req, res) => {
   const id = req.params.id;
+  if (!id) {
+    res.json(runner);
+  }
   res.json(runner[id]);
 };
 
@@ -19,20 +23,31 @@ export const buildApp: RequestHandler = (req, res) => {
   }
 
   const tempUploadDir = path.resolve(`${global.appRoot}/../temp/uploads`);
-  const name = `${req.file.originalname.replace(
-    '.zip',
-    '',
-  )}-${new Date().getTime()}`;
+  const appId = `${req.body.name.replace(
+    ' ',
+    '-',
+  )}-${new Date().getTime()}`.toLowerCase();
+
+  // in mb
+  const size = req.file.size / (1024 * 1024);
+
+  if (size > 10) {
+    return res.status(400).send({
+      code: 'MAX_SIZE_EXCEEDED',
+      error:
+        'App size too big, maximum size supported is 10 mb, please use assests from CDN if possible or mail at jainmukul1996@gmail.com',
+    });
+  }
 
   extract(filepath, {
-    dir: `${tempUploadDir}/extracted/${name}`,
+    dir: `${tempUploadDir}/extracted/${appId}`,
   })
     .then((d) => {
-      startBuild(name, (id: string) => {
-        res.json({ url: `/manager/build/status/${id}`, id });
+      startBuild({ appId, ...req.body, user: req.user }, (id: string) => {
+        res.json({ url: `/manager/build/status/${id}`, id, totalStages: 7 });
       });
-      fs.unlink(`${tempUploadDir}/${req.file.filename}`, () => {
-        console.log('error during deleting the uploaded zip');
+      fs.unlink(`${tempUploadDir}/${req.file.filename}`, (e) => {
+        console.log('error during deleting the uploaded zip', e);
       });
     })
     .catch((error) => {
@@ -46,6 +61,30 @@ export const getFile: RequestHandler = async (req, res) => {
   res.sendFile(file);
 };
 
-export const getApps: RequestHandler = async (req, res) => {
-  res.send(200);
+export const getApps: RequestHandler = async (req, res, next) => {
+  try {
+    const apps = await db.App.find({
+      $or: [{ type: 'LOCAL', userId: req.user?.id }, { type: 'GLOBAL' }],
+    }).lean();
+
+    const userIds = apps.map((x) => x.userId);
+    // TODO: look for join in mongo
+    const users = await db.User.find({
+      _id: {
+        $in: userIds,
+      },
+    });
+
+    const userMap: Record<string, any> = {};
+    users.forEach((u) => {
+      userMap[u._id] = u;
+    });
+
+    res.json(apps.map((a) => ({ ...a, user: userMap[a.userId] })));
+  } catch (error) {
+    res.status(500).json({
+      error,
+      message: 'Something went wrong while fetching apps or users',
+    });
+  }
 };

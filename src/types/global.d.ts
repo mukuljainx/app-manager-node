@@ -5,7 +5,14 @@ declare module NodeJS {
 }
 
 declare namespace Express {
-  interface User extends IUser {}
+  interface User {
+    name: string;
+    type: 'ADMIN' | 'USER';
+    avatar: string | null;
+    email: string;
+    active: boolean;
+    id: string;
+  }
 }
 
 declare module 'node-cmd' {

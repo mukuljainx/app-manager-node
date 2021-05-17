@@ -2,6 +2,7 @@ const util = require('util');
 const fs = require('fs');
 const path = require('path');
 const copyFilePromise = util.promisify(fs.copyFile);
+import { ncp } from 'ncp';
 
 export const copyFiles = (srcDir: string, destDir: string, files: string[]) => {
   return Promise.all(
@@ -11,11 +12,14 @@ export const copyFiles = (srcDir: string, destDir: string, files: string[]) => {
   );
 };
 
-// // usage
-// copyFiles('src', 'build', ['unk.txt', 'blah.txt'])
-//   .then(() => {
-//     console.log('done');
-//   })
-//   .catch((err) => {
-//     console.log(err);
-//   });
+export const recursiveCopy = (source: string, dest: string) => {
+  return new Promise((res, rej) => {
+    ncp(source, dest, { stopOnErr: true }, (error) => {
+      if (error) {
+        rej(error);
+      } else {
+        res(true);
+      }
+    });
+  });
+};
