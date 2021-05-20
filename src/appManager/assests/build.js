@@ -3,7 +3,7 @@ const config = require('./webpack.prod');
 const chalk = require('chalk');
 
 const appName = process.argv[2];
-const host = process.argv[3] || 'http://localhost:8000';
+const host = process.argv[3] || 'https://agni-web-os.herokuapp.com';
 config.output.publicPath =
   host + config.output.publicPath.replace('appName', appName);
 
