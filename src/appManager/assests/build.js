@@ -10,8 +10,10 @@ config.output.publicPath =
 const compiler = webpack(config);
 
 compiler.run((err, stats) => {
+  console.log(stats);
   if (err) {
     console.log(chalk.red(err));
+    process.exitCode = 1;
   }
 
   compiler.close((closeErr) => {

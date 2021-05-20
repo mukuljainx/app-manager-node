@@ -25,6 +25,10 @@ const init = (passportCore: PassportStatic) => {
 };
 
 const authenticationMiddleware: RequestHandler = (req, res, next) => {
+  const exceptions: Record<string, boolean> = { '/api/manager/apps/': true };
+  if (req.headers['authorization'] === 'null' && exceptions[req.originalUrl]) {
+    return next();
+  }
   passport.authenticate('jwt', { session: false })(req, res, next);
 };
 

@@ -1,4 +1,5 @@
-import { RequestHandler } from 'express';
+import { RequestHandler, response } from 'express';
+import awaitHandler from 'await-handler';
 import extract from 'extract-zip';
 import path from 'path';
 import fs from 'fs';
@@ -23,7 +24,24 @@ export const getStatus: RequestHandler = (req, res) => {
   res.json(runner[id]);
 };
 
-export const buildApp: RequestHandler = (req, res) => {
+export const buildApp: RequestHandler = async (req, res) => {
+  const [dbError, apps] = await awaitHandler(
+    db.App.find({ userId: req.user!.id }),
+  );
+
+  if (dbError) {
+    return res.status(500).send({
+      error: dbError,
+      message: 'Error during fetching apps from DB',
+    });
+  }
+
+  if (apps.length >= 2) {
+    return res
+      .status(400)
+      .send({ message: "A user can't add more than 2 apps." });
+  }
+
   const filepath = path.join(req.file.destination, req.file.filename);
 
   if (req.file.mimetype !== 'application/zip') {
@@ -32,10 +50,9 @@ export const buildApp: RequestHandler = (req, res) => {
   }
 
   const tempUploadDir = path.resolve(`${global.appRoot}/../temp/uploads`);
-  const appId = `${req.body.name.replace(
-    ' ',
-    '-',
-  )}-${new Date().getTime()}`.toLowerCase();
+  const appId = `${req.body.name
+    .split(' ')
+    .join('-')}-${new Date().getTime()}`.toLowerCase();
 
   // in mb
   const size = req.file.size / (1024 * 1024);
@@ -71,9 +88,12 @@ export const getFile: RequestHandler = (req, res, next) => {
 };
 
 export const getApps: RequestHandler = async (req, res, next) => {
+  console.log(req.user);
   try {
     const apps = await db.App.find({
-      $or: [{ type: 'LOCAL', userId: req.user?.id }, { type: 'GLOBAL' }],
+      $or: req.user
+        ? [{ type: 'LOCAL', userId: req.user?.id }, { type: 'GLOBAL' }]
+        : [{ type: 'GLOBAL' }],
     }).lean();
 
     const userIds = apps.map((x) => x.userId);

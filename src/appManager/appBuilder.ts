@@ -100,7 +100,7 @@ export const startBuild = async (
     });
 
     mainFile = mainFile.replace(
-      /(?<=document.getElementById\(").*?(?="\);)/g,
+      /(?<=document.getElementById\(").*?(?="\))/g,
       id,
     );
 
@@ -115,8 +115,8 @@ export const startBuild = async (
       runCommand(
         `cd ${extracted} && npm i && touch src/${id}.ts && node build ${id}`,
         {
-          onData: (data) => {
-            updateStatus(id, { stage: 4, data, activity: 'Building app...' });
+          onData: () => {
+            updateStatus(id, { stage: 4, activity: 'Building app...' });
           },
           onError: (error) => {
             updateStatus(id, {

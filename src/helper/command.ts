@@ -23,10 +23,15 @@ const runCommand = (cmd: string, hooks: IHooksProps) => {
       reject(error);
     });
 
-    command.on('close', (code: string) => {
+    command.on('close', (code: number) => {
       console.log(`child process exited with code ${code}`);
-      hooks.onClose(code);
-      resolve(code);
+      if (code === 1) {
+        reject(code);
+        hooks.onError(`child process exited with code ${code}`);
+      } else {
+        hooks.onClose(code + '');
+        resolve(code);
+      }
     });
   });
 };

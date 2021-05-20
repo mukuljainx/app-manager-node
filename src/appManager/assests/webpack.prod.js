@@ -1,4 +1,5 @@
 const path = require('path');
+const CompressionPlugin = require('compression-webpack-plugin');
 const { WebpackManifestPlugin } = require('webpack-manifest-plugin');
 const UglifyJsPlugin = require('uglifyjs-webpack-plugin');
 const webpack = require('webpack');
@@ -20,10 +21,10 @@ const config = {
   // optimization: {
   //   splitChunks: {
   //     // include all types of chunks
-  //     chunks: "all",
-  //     maxAsyncRequests: 1
+  //     chunks: 'all',
+  //     maxAsyncRequests: 1,
   //   },
-  //   runtimeChunk: "single"
+  //   runtimeChunk: 'single',
   // },
   devtool: false,
   plugins: [
@@ -34,6 +35,9 @@ const config = {
       uglifyOptions: {
         ecma: 5,
       },
+    }),
+    new CompressionPlugin({
+      test: /\.js(\?.*)?$/i,
     }),
     new WebpackManifestPlugin(),
   ],

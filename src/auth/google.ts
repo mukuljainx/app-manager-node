@@ -13,7 +13,6 @@ const init = (passportCore: PassportStatic) => {
   passport.use(
     new Strategy(googleStategyConfig, async (_, __, profile, done) => {
       // controles goes back to app
-      debugger;
       try {
         let user = await db.User.findOne({
           email: profile!.emails![0].value,
