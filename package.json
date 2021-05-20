@@ -5,8 +5,8 @@
   "description": "Node Typescript Babel Boilerplate/Stater kit",
   "private": false,
   "scripts": {
-    "start:build": "node ./lib/server",
-    "start": "npx tsc-watch --onSuccess 'npm run serve'",
+    "start": "node ./lib/server",
+    "watch": "npx tsc-watch --onSuccess 'npm run serve'",
     "serve": "babel-node --extensions '.ts' --inspect ./src/server.ts",
     "build": "npm run build:types && npm run build:js",
     "build:types": "tsc --emitDeclarationOnly",
